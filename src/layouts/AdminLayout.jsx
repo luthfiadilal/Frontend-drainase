@@ -1,10 +1,12 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, Settings, LogOut, Menu } from 'lucide-react';
+import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList } from 'lucide-react';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/master', label: 'Master Data', icon: Database },
+  { path: '/admin/reports', label: 'Laporan Warga', icon: ClipboardList },
+  { path: '/admin/emergency', label: 'Darurat', icon: AlertTriangle },
   { path: '/admin/settings', label: 'Pengaturan', icon: Settings },
 ];
 
