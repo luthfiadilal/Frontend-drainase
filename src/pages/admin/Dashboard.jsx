@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import RegionMap from '../../components/map/RegionMap';
 import { Activity, Map as MapIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
+import { getDrainages } from '../../services/masterDataService';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, bgColorClass }) => (
   <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-default">
@@ -22,10 +22,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Fetch drainages for stats
-    axiosInstance.get('/drainages')
+    getDrainages()
       .then(res => {
-        if(res.data.success) {
-          const drainages = res.data.data;
+        if(res && res.success) {
+          const drainages = res.data;
           const total = drainages.length;
           const danger = drainages.filter(d => d.status === 'Danger').length;
           const safe = drainages.filter(d => d.status === 'Safe').length;
@@ -53,7 +53,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
         <div className="lg:col-span-2">
-          <Card title="Peta Sebaran Wilayah & Kondisi" className="h-[450px] flex flex-col p-0">
+          <Card title="Peta Sebaran Wilayah & Kondisi" className="h-[450px]" bodyClassName="p-0 relative flex-1">
             <div className="w-full h-full flex-1 relative z-0">
               <RegionMap />
             </div>

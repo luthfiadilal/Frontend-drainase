@@ -90,8 +90,12 @@ const AdminLayout = () => {
                   }`
                 }
               >
-                <Icon className={`w-6 h-6 mb-1 transition-all duration-300 ${isActive ? 'drop-shadow-md' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-medium transition-all">{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon className={`w-6 h-6 mb-1 transition-all duration-300 ${isActive ? 'drop-shadow-md' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
+                    <span className="text-[10px] font-medium transition-all">{item.label}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}

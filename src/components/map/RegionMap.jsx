@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import axiosInstance from '../../api/axiosInstance';
+import { getRegions } from '../../services/regionService';
 
 const RegionMap = () => {
   const [geoData, setGeoData] = useState(null);
 
   useEffect(() => {
     // Fetch regions from API
-    axiosInstance.get('/regions')
+    getRegions()
       .then(res => {
-        if (res.data.success) {
-          setGeoData(res.data.data);
+        if (res && res.success) {
+          setGeoData(res.data);
         }
       })
       .catch(err => console.error("Error fetching regions:", err));
@@ -19,16 +20,40 @@ const RegionMap = () => {
 
   const onEachFeature = (feature, layer) => {
     if (feature.properties && feature.properties.name) {
-      layer.bindPopup(`<b>${feature.properties.name}</b>`);
+      layer.bindPopup(`
+        <div style="text-align: center; font-family: sans-serif;">
+          <b style="color: #1f2937; display: block; margin-bottom: 4px;">${feature.properties.name}</b>
+          <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; color: white; display: inline-block; background-color: ${feature.properties.risk_color || '#28A745'}">
+            Status: ${feature.properties.risk_status || 'Clear'}
+          </span>
+        </div>
+      `);
     }
   };
 
-  // Center near Purwakarta/Bungursari based on typical coordinates
+  const style = (feature) => {
+    return {
+      fillColor: feature.properties.risk_color || '#28A745',
+      weight: 2,
+      opacity: 1,
+      color: 'white',
+      dashArray: '3',
+      fillOpacity: 0.5
+    };
+  };
+
+  const coordsToLatLng = (coords) => {
+    // MySQL ST_AsGeoJSON outputs [lat, lng] instead of the standard GeoJSON [lng, lat]
+    // We reverse it back here so Leaflet renders it in the correct location
+    return new L.LatLng(coords[0], coords[1]);
+  };
+
+  // Center near Tasikmalaya
   return (
     <div className="w-full h-full rounded-xl overflow-hidden shadow-inner relative z-0">
       <MapContainer 
-        center={[-6.5387, 107.4463]} 
-        zoom={12} 
+        center={[-7.3274, 108.2232]} 
+        zoom={11} 
         style={{ width: '100%', height: '100%' }}
         scrollWheelZoom={false}
       >
@@ -40,13 +65,8 @@ const RegionMap = () => {
           <GeoJSON 
             data={geoData} 
             onEachFeature={onEachFeature}
-            style={{
-              color: '#3b82f6',
-              weight: 2,
-              opacity: 0.8,
-              fillColor: '#60a5fa',
-              fillOpacity: 0.2
-            }}
+            style={style}
+            coordsToLatLng={coordsToLatLng}
           />
         )}
       </MapContainer>

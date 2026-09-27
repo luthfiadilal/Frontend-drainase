@@ -1,15 +1,37 @@
 import React from 'react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import { useState } from 'react';
 import { Mail, Lock, Droplets } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { login } from '../../services/authService';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    navigate('/admin');
+    setLoading(true);
+    setError('');
+    try {
+      const res = await login(formData);
+      if (res && res.success) {
+        navigate('/admin');
+      } else {
+        setError(res.message || 'Login gagal.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Terjadi kesalahan pada server.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +51,7 @@ const Login = () => {
 
       <Card className="w-full max-w-md shadow-2xl shadow-gray-200/50 border-0 ring-1 ring-gray-200/50 relative z-10">
         <form onSubmit={handleLogin} className="space-y-5">
+          {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Administrator</label>
             <div className="relative">
@@ -37,6 +60,9 @@ const Login = () => {
               </div>
               <input
                 type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 hover:bg-white focus:bg-white outline-none"
                 placeholder="admin@drainase.id"
                 required
@@ -55,6 +81,9 @@ const Login = () => {
               </div>
               <input
                 type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 hover:bg-white focus:bg-white outline-none"
                 placeholder="••••••••"
                 required
@@ -63,9 +92,18 @@ const Login = () => {
           </div>
 
           <div className="pt-2">
-             <Button type="submit" className="w-full py-3.5 text-base shadow-lg shadow-blue-500/30">
-               Masuk ke Sistem
+             <Button type="submit" disabled={loading} className="w-full py-3.5 text-base shadow-lg shadow-blue-500/30">
+               {loading ? 'Memproses...' : 'Masuk ke Sistem'}
              </Button>
+          </div>
+          
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Belum punya akun?{' '}
+              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                Daftar di sini
+              </Link>
+            </p>
           </div>
         </form>
       </Card>

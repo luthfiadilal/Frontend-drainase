@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
+import { getDrainages, getAspects, getIndicators, getIndicatorOptions, getUsers } from '../../services/masterDataService';
 
 const MasterData = () => {
   const [activeTab, setActiveTab] = useState('drainage');
@@ -12,20 +12,23 @@ const MasterData = () => {
   const tabs = [
     { id: 'drainage', label: 'Data Drainase' },
     { id: 'aspect', label: 'Aspek SPK' },
+    { id: 'indicator', label: 'Indikator SPK' },
+    { id: 'indicator_option', label: 'Opsi Indikator' },
     { id: 'user', label: 'Pengguna' },
   ];
 
   const fetchData = async (tab) => {
     setLoading(true);
     try {
-      let endpoint = '';
-      if (tab === 'drainage') endpoint = '/drainages';
-      if (tab === 'aspect') endpoint = '/aspects';
-      if (tab === 'user') endpoint = '/users';
+      let res;
+      if (tab === 'drainage') res = await getDrainages();
+      else if (tab === 'aspect') res = await getAspects();
+      else if (tab === 'indicator') res = await getIndicators();
+      else if (tab === 'indicator_option') res = await getIndicatorOptions();
+      else if (tab === 'user') res = await getUsers();
       
-      const res = await axiosInstance.get(endpoint);
-      if (res.data.success) {
-        setData(res.data.data);
+      if (res && res.success) {
+        setData(res.data);
       }
     } catch (err) {
       console.error('Fetch error:', err);
@@ -57,6 +60,27 @@ const MasterData = () => {
           <th className="py-3 px-5">Aspek</th>
           <th className="py-3 px-5">Bobot</th>
           <th className="py-3 px-5">Total Indikator</th>
+          <th className="py-3 px-5 text-right">Aksi</th>
+        </tr>
+      );
+    }
+    if (activeTab === 'indicator') {
+      return (
+        <tr className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <th className="py-3 px-5">Aspek</th>
+          <th className="py-3 px-5">Indikator</th>
+          <th className="py-3 px-5">Bobot</th>
+          <th className="py-3 px-5 text-right">Aksi</th>
+        </tr>
+      );
+    }
+    if (activeTab === 'indicator_option') {
+      return (
+        <tr className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <th className="py-3 px-5">Indikator</th>
+          <th className="py-3 px-5">Skor</th>
+          <th className="py-3 px-5">Deskripsi</th>
+          <th className="py-3 px-5">Bobot Kalkulasi</th>
           <th className="py-3 px-5 text-right">Aksi</th>
         </tr>
       );
@@ -107,6 +131,33 @@ const MasterData = () => {
             <td className="py-4 px-5 font-semibold text-gray-800">{item.name}</td>
             <td className="py-4 px-5 font-medium text-gray-900">{item.weight}%</td>
             <td className="py-4 px-5 text-sm text-gray-600">{item.Indicators ? item.Indicators.length : 0} Indikator</td>
+            <td className="py-4 px-5 text-right">
+              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all mr-1"><Edit2 className="w-4 h-4" /></button>
+              <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
+            </td>
+          </tr>
+        );
+      }
+      if (activeTab === 'indicator') {
+        return (
+          <tr key={item.id} className="hover:bg-blue-50/30 transition-colors border-b border-gray-50">
+            <td className="py-4 px-5 text-sm text-gray-600">{item.Aspect ? item.Aspect.name : '-'}</td>
+            <td className="py-4 px-5 font-semibold text-gray-800">{item.name}</td>
+            <td className="py-4 px-5 font-medium text-gray-900">{item.weight}</td>
+            <td className="py-4 px-5 text-right">
+              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all mr-1"><Edit2 className="w-4 h-4" /></button>
+              <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
+            </td>
+          </tr>
+        );
+      }
+      if (activeTab === 'indicator_option') {
+        return (
+          <tr key={item.id} className="hover:bg-blue-50/30 transition-colors border-b border-gray-50">
+            <td className="py-4 px-5 text-sm text-gray-600">{item.Indicator ? item.Indicator.name : '-'}</td>
+            <td className="py-4 px-5 font-semibold text-gray-800">{item.score}</td>
+            <td className="py-4 px-5 font-medium text-gray-900">{item.description}</td>
+            <td className="py-4 px-5 text-sm text-gray-600">{item.calculated_weight}</td>
             <td className="py-4 px-5 text-right">
               <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all mr-1"><Edit2 className="w-4 h-4" /></button>
               <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
