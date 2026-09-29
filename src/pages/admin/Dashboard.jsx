@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import RegionMap from '../../components/map/RegionMap';
 import { Activity, Map as MapIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { getDrainages } from '../../services/masterDataService';
-
+import { getDrainages, getReports } from '../../services/masterDataService';
 const StatCard = ({ title, value, icon: Icon, colorClass, bgColorClass }) => (
   <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-default">
     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-4 ${bgColorClass}`}>
@@ -27,10 +26,19 @@ const Dashboard = () => {
         if(res && res.success) {
           const drainages = res.data;
           const total = drainages.length;
-          const danger = drainages.filter(d => d.status === 'Danger').length;
-          const safe = drainages.filter(d => d.status === 'Safe').length;
+          const danger = drainages.filter(d => d.current_condition_status === 'Danger').length;
+          const safe = drainages.filter(d => !d.current_condition_status || d.current_condition_status === 'Clear').length;
           setStats(prev => ({ ...prev, total, danger, safe }));
           setReports(drainages.slice(0, 4));
+        }
+      }).catch(err => console.error(err));
+
+    // Fetch reports for new reports stats
+    getReports()
+      .then(res => {
+        if(res && res.success) {
+          const newReports = res.data.filter(r => r.verification_status === 'pending' || !r.verification_status).length;
+          setStats(prev => ({ ...prev, newReports }));
         }
       }).catch(err => console.error(err));
   }, []);
@@ -53,8 +61,8 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
         <div className="lg:col-span-2">
-          <Card title="Peta Sebaran Wilayah & Kondisi" className="h-[450px]" bodyClassName="p-0 relative flex-1">
-            <div className="w-full h-full flex-1 relative z-0">
+          <Card title="Peta Sebaran Wilayah & Kondisi" className="h-[450px]" bodyClassName="p-4 relative flex-1 flex flex-col">
+            <div className="w-full h-full flex-1 relative z-0 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
               <RegionMap />
             </div>
           </Card>
@@ -62,17 +70,25 @@ const Dashboard = () => {
         <div>
           <Card title="Drainase Terdaftar">
             <div className="space-y-4">
-              {reports.map((item, i) => (
-                <div key={item.id || i} className="flex items-start p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer border border-transparent hover:border-gray-100">
-                  <div className={`w-10 h-10 rounded-full ${item.status === 'Danger' ? 'bg-red-100' : 'bg-blue-100'} flex-shrink-0 flex items-center justify-center mr-3`}>
-                    {item.status === 'Danger' ? <AlertTriangle className="w-5 h-5 text-red-600" /> : <CheckCircle2 className="w-5 h-5 text-blue-600" />}
+              {reports.map((item, i) => {
+                const isDanger = item.current_condition_status === 'Danger';
+                const isWarning = item.current_condition_status === 'Warning';
+                const bgClass = isDanger ? 'bg-red-50' : isWarning ? 'bg-yellow-50' : 'bg-emerald-50';
+                const iconColor = isDanger ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-emerald-600';
+                const IconComp = isDanger || isWarning ? AlertTriangle : CheckCircle2;
+                
+                return (
+                  <div key={item.id || i} className="flex items-start p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer border border-transparent hover:border-gray-100">
+                    <div className={`w-10 h-10 rounded-full ${bgClass} flex-shrink-0 flex items-center justify-center mr-3`}>
+                      <IconComp className={`w-5 h-5 ${iconColor}`} />
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-semibold text-gray-800">{item.name}</h5>
+                      <p className="text-xs text-gray-500 mt-1">{item.type || 'Drainase'} • Status: <span className={`font-medium ${iconColor}`}>{item.current_condition_status || 'Clear'}</span></p>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="text-sm font-semibold text-gray-800">{item.name}</h5>
-                    <p className="text-xs text-gray-500 mt-1">{item.type} • Status: {item.status}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {reports.length === 0 && <p className="text-sm text-gray-500 text-center py-4">Belum ada data.</p>}
             </div>
           </Card>

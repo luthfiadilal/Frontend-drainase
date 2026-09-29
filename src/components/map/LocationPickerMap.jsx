@@ -24,9 +24,17 @@ const LocationMarker = ({ position, setPosition }) => {
   );
 };
 
-const LocationPickerMap = ({ onLocationSelected }) => {
-  const [position, setPosition] = useState(null);
+const LocationPickerMap = ({ onLocationSelected, initialPosition }) => {
+  const [position, setPosition] = useState(initialPosition || null);
   const [geoData, setGeoData] = useState(null);
+
+  useEffect(() => {
+    if (initialPosition && initialPosition.lat && initialPosition.lng) {
+      setPosition(initialPosition);
+    } else {
+      setPosition(null);
+    }
+  }, [initialPosition?.lat, initialPosition?.lng]);
 
   useEffect(() => {
     getRegions()

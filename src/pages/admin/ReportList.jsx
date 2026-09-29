@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import { getReports } from '../../services/masterDataService';
-import { AlertTriangle, Clock, MapPin, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Clock, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
+import ReportDetailModal from '../../components/common/ReportDetailModal';
 
 const ReportList = ({ dangerOnly = false }) => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -35,6 +37,10 @@ const ReportList = ({ dangerOnly = false }) => {
     if (status === 'Danger') return 'bg-red-100 text-red-800 border-red-200';
     if (status === 'Warning') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     return 'bg-green-100 text-green-800 border-green-200';
+  };
+
+  const openDetail = (report) => {
+    setSelectedReport(report);
   };
 
   return (
@@ -88,13 +94,26 @@ const ReportList = ({ dangerOnly = false }) => {
               </div>
 
               <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">Skor: {report.total_score}</span>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Lihat Detail</button>
+                <span className="text-sm font-semibold text-gray-700">
+                  Skor: {report.total_score ? (parseFloat(report.total_score) * 100).toFixed(2).replace(/\.00$/, '') + '%' : '0%'}
+                </span>
+                <button 
+                  onClick={() => openDetail(report)}
+                  className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
+                >
+                  Lihat Detail
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </button>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      <ReportDetailModal 
+        report={selectedReport} 
+        onClose={() => setSelectedReport(null)} 
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,6 +12,21 @@ const navItems = [
 ];
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const executeLogout = () => {
+    // Clear any auth tokens if added in the future
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setShowLogoutModal(false);
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="flex h-screen bg-gray-50/50">
       
@@ -47,7 +63,7 @@ const AdminLayout = () => {
         </nav>
         
         <div className="p-4 border-t border-gray-50">
-          <button className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 transition-colors">
+          <button onClick={handleLogoutClick} className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 transition-colors">
             <LogOut className="w-5 h-5 mr-3" />
             Keluar
           </button>
@@ -104,6 +120,14 @@ const AdminLayout = () => {
         </div>
       </div>
 
+      <ConfirmModal 
+        isOpen={showLogoutModal} 
+        onClose={() => setShowLogoutModal(false)} 
+        onConfirm={executeLogout} 
+        title="Konfirmasi Keluar" 
+        message="Apakah Anda yakin ingin keluar dari sesi ini? Anda harus login kembali untuk mengakses halaman Admin."
+        confirmText="Ya, Keluar"
+      />
     </div>
   );
 };

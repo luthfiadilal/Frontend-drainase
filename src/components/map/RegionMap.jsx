@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getRegions } from '../../services/regionService';
+import { getDrainages } from '../../services/masterDataService';
+
+const createCustomIcon = (color) => {
+  return L.divIcon({
+    className: "custom-div-icon",
+    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
 
 const RegionMap = () => {
   const [geoData, setGeoData] = useState(null);
+  const [drainages, setDrainages] = useState([]);
 
   useEffect(() => {
     // Fetch regions from API
@@ -16,6 +27,15 @@ const RegionMap = () => {
         }
       })
       .catch(err => console.error("Error fetching regions:", err));
+
+    // Fetch drainages from API
+    getDrainages()
+      .then(res => {
+        if (res && res.success) {
+          setDrainages(res.data);
+        }
+      })
+      .catch(err => console.error("Error fetching drainages:", err));
   }, []);
 
   const onEachFeature = (feature, layer) => {
@@ -33,12 +53,12 @@ const RegionMap = () => {
 
   const style = (feature) => {
     return {
-      fillColor: feature.properties.risk_color || '#28A745',
+      fillColor: feature.properties.risk_color || '#3b82f6',
       weight: 2,
       opacity: 1,
-      color: 'white',
+      color: feature.properties.risk_color || '#94a3b8',
       dashArray: '3',
-      fillOpacity: 0.5
+      fillOpacity: 0.15
     };
   };
 
@@ -53,7 +73,7 @@ const RegionMap = () => {
     <div className="w-full h-full rounded-xl overflow-hidden shadow-inner relative z-0">
       <MapContainer 
         center={[-7.3274, 108.2232]} 
-        zoom={11} 
+        zoom={13} 
         style={{ width: '100%', height: '100%' }}
         scrollWheelZoom={false}
       >
@@ -69,6 +89,29 @@ const RegionMap = () => {
             coordsToLatLng={coordsToLatLng}
           />
         )}
+        {drainages.map((d) => (
+          <Marker
+            key={d.id}
+            position={[d.latitude, d.longitude]}
+            icon={createCustomIcon(d.current_pin_color || "#6C757D")}
+          >
+            <Popup>
+              <div style={{ textAlign: 'center', fontFamily: 'sans-serif' }}>
+                <b style={{ color: '#1f2937', display: 'block', marginBottom: '4px' }}>{d.name}</b>
+                <span style={{ 
+                  fontSize: '0.75rem', 
+                  padding: '2px 8px', 
+                  borderRadius: '9999px', 
+                  color: 'white', 
+                  display: 'inline-block', 
+                  backgroundColor: d.current_condition_status === 'Danger' ? '#DC3545' : d.current_condition_status === 'Warning' ? '#FFC107' : '#28A745' 
+                }}>
+                  Status: {d.current_condition_status || 'Clear'}
+                </span>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );
