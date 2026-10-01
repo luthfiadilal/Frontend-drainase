@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import { getReports } from '../../services/masterDataService';
-import { AlertTriangle, Clock, MapPin, CheckCircle2, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Clock, MapPin, CheckCircle2, ChevronRight, Wrench } from 'lucide-react';
 import ReportDetailModal from '../../components/common/ReportDetailModal';
+import ReportActionModal from '../../components/common/ReportActionModal';
 
 const ReportList = ({ dangerOnly = false }) => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [actionReport, setActionReport] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -93,17 +95,28 @@ const ReportList = ({ dangerOnly = false }) => {
                 <p className="text-gray-600"><strong>Catatan:</strong> {report.notes || 'Tidak ada catatan'}</p>
               </div>
 
-              <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">
-                  Skor: {report.total_score ? (parseFloat(report.total_score) * 100).toFixed(2).replace(/\.00$/, '') + '%' : '0%'}
-                </span>
-                <button 
-                  onClick={() => openDetail(report)}
-                  className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
-                >
-                  Lihat Detail
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </button>
+              <div className="border-t border-gray-100 pt-4 flex flex-col gap-2">
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Skor: {report.total_score ? (parseFloat(report.total_score) * 100).toFixed(2).replace(/\.00$/, '') + '%' : '0%'}
+                  </span>
+                  <button 
+                    onClick={() => openDetail(report)}
+                    className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg"
+                  >
+                    Lihat Detail
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
+                {report.verification_status !== 'completed' && report.status_result !== 'Clear' && (
+                  <button
+                    onClick={() => setActionReport(report)}
+                    className="w-full mt-2 flex items-center justify-center text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium transition-colors px-3 py-2 rounded-lg"
+                  >
+                    <Wrench className="w-4 h-4 mr-2" />
+                    Lakukan Perbaikan
+                  </button>
+                )}
               </div>
             </Card>
           ))}
@@ -113,6 +126,15 @@ const ReportList = ({ dangerOnly = false }) => {
       <ReportDetailModal 
         report={selectedReport} 
         onClose={() => setSelectedReport(null)} 
+      />
+      
+      <ReportActionModal
+        report={actionReport}
+        onClose={() => setActionReport(null)}
+        onSuccess={() => {
+          setActionReport(null);
+          fetchReports();
+        }}
       />
     </div>
   );

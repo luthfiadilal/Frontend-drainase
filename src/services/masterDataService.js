@@ -111,3 +111,13 @@ export const getReports = async (status = '') => {
   const response = await axiosInstance.get(url);
   return response.data;
 };
+
+// Actions
+export const createAction = async (data) => {
+  const response = await axiosInstance.post('/actions', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
