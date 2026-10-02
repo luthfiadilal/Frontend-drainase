@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Mail, Lock, Droplets } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../services/authService';
+import logoLight from '../../assets/images/LOGO-DRAINASE2.jpg';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -42,8 +43,8 @@ const Login = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[100px] pointer-events-none"></div>
 
       <div className="mb-8 text-center relative z-10">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 shadow-xl shadow-blue-500/30 mb-5 transform transition hover:scale-105">
-          <Droplets className="w-8 h-8 text-white" />
+        <div className="inline-flex items-center justify-center mb-5 transform transition hover:scale-105">
+          <img src={logoLight} alt="SI-Drainase Logo" className="h-20 w-auto rounded-2xl shadow-xl shadow-blue-500/10 object-contain bg-white p-1" />
         </div>
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">SI-Drainase</h1>
         <p className="text-gray-500 mt-2 font-medium">Sistem Informasi & SPK Drainase GIS</p>
@@ -97,13 +98,16 @@ const Login = () => {
              </Button>
           </div>
           
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600">
-              Belum punya akun?{' '}
-              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                Daftar di sini
-              </Link>
+          <div className="text-center mt-6 pt-5 border-t border-gray-100">
+            <p className="text-sm text-gray-500 mb-3">
+              Halaman ini khusus untuk administrator.
             </p>
+            <Link 
+              to="/" 
+              className="inline-flex justify-center items-center w-full py-2.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+            >
+              Kembali ke Peta Publik Warga
+            </Link>
           </div>
         </form>
       </Card>

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from "react-leaflet";
 import { useNavigate } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { io } from "socket.io-client";
 import axiosInstance from "../../api/axiosInstance";
 import {
   AlertTriangle,
@@ -13,12 +14,20 @@ import {
   Droplets,
   ArrowRight,
 } from "lucide-react";
+import logoLight from "../../assets/images/LOGO-DRAINASE2.jpg";
 import ReportTimelineCard from "../../components/citizen/ReportTimelineCard";
+import ReportDetailModal from "../../components/common/ReportDetailModal";
+import ReportCommentModal from "../../components/common/ReportCommentModal";
 
-const createCustomIcon = (color) => {
+const createCustomIcon = (color, isDanger = false) => {
   return L.divIcon({
     className: "custom-div-icon",
-    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+    html: `
+      <div style="position: relative; width: 24px; height: 24px;">
+        ${isDanger ? `<div class="animate-ping absolute inset-0 rounded-full" style="background-color: ${color}; opacity: 0.75;"></div>` : ''}
+        <div class="relative z-10" style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>
+      </div>
+    `,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
@@ -29,11 +38,38 @@ const PublicMap = () => {
   const [regions, setRegions] = useState(null);
   const [selectedDrainage, setSelectedDrainage] = useState(null);
   const [reports, setReports] = useState([]);
-  const [expandedReportId, setExpandedReportId] = useState(null);
+  const [detailReport, setDetailReport] = useState(null);
+  const [commentReport, setCommentReport] = useState(null);
+  const [dangerDrainageId, setDangerDrainageId] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchMapData();
+
+    // Socket connection for Danger alerts
+    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
+      transports: ['websocket']
+    });
+    socket.on("danger_report", (data) => {
+      setToastMessage(data.message);
+      setDangerDrainageId(data.drainageId);
+      
+      // Secara instan ubah warna pin di map menjadi merah (Danger)
+      setDrainages(prev => prev.map(d => 
+        d.id === data.drainageId 
+          ? { ...d, current_pin_color: "#DC3545", current_condition_status: "Danger" }
+          : d
+      ));
+
+      // Auto-hide alert and pulse after 6 seconds
+      setTimeout(() => {
+        setToastMessage('');
+        setDangerDrainageId(null);
+      }, 6000);
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const fetchMapData = async () => {
@@ -83,12 +119,20 @@ const PublicMap = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 flex-col md:flex-row relative">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
+          <div className="bg-red-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-red-500 font-medium">
+            <AlertTriangle className="w-6 h-6 animate-pulse text-white" />
+            <span className="text-sm">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Top Bar */}
       <div className="md:hidden absolute top-4 left-4 right-4 z-[1000] flex justify-between items-center bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-gray-100">
         <div className="flex items-center">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center mr-2 shadow-md">
-            <Droplets className="w-5 h-5 text-white" />
-          </div>
+          <img src={logoLight} alt="SI-Drainase Logo" className="h-8 w-auto mr-2 object-contain rounded-md" />
           <h1 className="font-bold text-gray-900 text-sm">SI-Drainase</h1>
         </div>
         <button
@@ -98,8 +142,11 @@ const PublicMap = () => {
           Login Admin
         </button>
       </div>
-      {/* Header Mobile / Title Overlay */}
-      <div className="absolute top-4 right-4 z-[1000] hidden md:block">
+      {/* Header Desktop / Login Overlay */}
+      <div 
+        className={`absolute top-4 z-[1000] hidden md:block transition-all duration-300`}
+        style={{ right: selectedDrainage ? 'calc(24rem + 1rem)' : '1rem' }}
+      >
         <button
           onClick={() => navigate("/login")}
           className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 text-sm font-medium py-2 px-4 rounded-xl shadow-sm border border-gray-200 transition-colors"
@@ -110,9 +157,7 @@ const PublicMap = () => {
 
       <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-100 max-w-sm hidden md:block">
         <div className="flex items-center mb-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center mr-3 shadow-md">
-            <Droplets className="w-6 h-6 text-white" />
-          </div>
+          <img src={logoLight} alt="SI-Drainase Logo" className="h-10 w-auto mr-3 object-contain rounded-lg" />
           <div>
             <h1 className="font-bold text-xl text-gray-900">
               SI-Drainase Publik
@@ -166,7 +211,7 @@ const PublicMap = () => {
             <Marker
               key={d.id}
               position={[d.latitude, d.longitude]}
-              icon={createCustomIcon(d.current_pin_color || "#6C757D")}
+              icon={createCustomIcon(d.current_pin_color || "#6C757D", d.id === dangerDrainageId)}
               eventHandlers={{ click: () => handleMarkerClick(d) }}
             />
           ))}
@@ -244,12 +289,8 @@ const PublicMap = () => {
                     <ReportTimelineCard
                       key={report.id}
                       report={report}
-                      isExpanded={expandedReportId === report.id}
-                      onToggle={() =>
-                        setExpandedReportId(
-                          expandedReportId === report.id ? null : report.id,
-                        )
-                      }
+                      onViewDetail={() => setDetailReport(report)}
+                      onViewComments={() => setCommentReport(report)}
                     />
                   ))}
                 </div>
@@ -272,6 +313,16 @@ const PublicMap = () => {
           </>
         )}
       </div>
+
+      <ReportDetailModal 
+        report={detailReport} 
+        onClose={() => setDetailReport(null)} 
+      />
+
+      <ReportCommentModal 
+        report={commentReport}
+        onClose={() => setCommentReport(null)}
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
+import logoLight from '../assets/images/LOGO-DRAINASE2.jpg';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,9 +34,7 @@ const AdminLayout = () => {
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm z-10">
         <div className="h-16 flex items-center px-6 border-b border-gray-50">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-3 shadow-sm">
-            <span className="text-white font-bold text-sm">SD</span>
-          </div>
+          <img src={logoLight} alt="SI-Drainase Logo" className="h-8 w-auto mr-3 object-contain rounded-md" />
           <h1 className="font-bold text-lg text-gray-800 tracking-tight">SI-Drainase</h1>
         </div>
         
@@ -75,9 +74,7 @@ const AdminLayout = () => {
         {/* Mobile Top Header */}
         <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 justify-between sticky top-0 z-10">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mr-3 shadow-sm">
-              <span className="text-white font-bold text-sm">SD</span>
-            </div>
+            <img src={logoLight} alt="SI-Drainase Logo" className="h-8 w-auto mr-3 object-contain rounded-md" />
             <h1 className="font-bold text-gray-800">SI-Drainase</h1>
           </div>
           <button className="p-2 text-gray-500 rounded-xl hover:bg-gray-50">

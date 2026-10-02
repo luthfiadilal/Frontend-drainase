@@ -1,19 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import { getReports } from '../../services/masterDataService';
-import { AlertTriangle, Clock, MapPin, CheckCircle2, ChevronRight, Wrench } from 'lucide-react';
+import axiosInstance from '../../api/axiosInstance';
+import { AlertTriangle, Clock, MapPin, CheckCircle2, ChevronRight, Wrench, Filter } from 'lucide-react';
 import ReportDetailModal from '../../components/common/ReportDetailModal';
 import ReportActionModal from '../../components/common/ReportActionModal';
+import CustomDatePicker from '../../components/common/CustomDatePicker';
 
 const ReportList = ({ dangerOnly = false }) => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState(null);
   const [actionReport, setActionReport] = useState(null);
+  
+  // Filter States
+  const [drainages, setDrainages] = useState([]);
+  const [filterDrainage, setFilterDrainage] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState(null);
+  const [filterEndDate, setFilterEndDate] = useState(null);
 
   useEffect(() => {
     fetchReports();
+    fetchDrainages();
   }, [dangerOnly]);
+
+  const fetchDrainages = async () => {
+    try {
+      const res = await axiosInstance.get('/drainages');
+      if (res.data.success) {
+        setDrainages(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
@@ -45,6 +66,23 @@ const ReportList = ({ dangerOnly = false }) => {
     setSelectedReport(report);
   };
 
+  const filteredReports = reports.filter(report => {
+    const matchDrainage = filterDrainage === 'all' || report.drainage_id === parseInt(filterDrainage);
+    const matchStatus = filterStatus === 'all' || report.status_result === filterStatus;
+    
+    let matchTime = true;
+    if (filterStartDate && filterEndDate) {
+      const reportDate = new Date(report.report_date);
+      const start = new Date(filterStartDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(filterEndDate);
+      end.setHours(23, 59, 59, 999);
+      matchTime = reportDate >= start && reportDate <= end;
+    }
+    
+    return matchDrainage && matchStatus && matchTime;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-2">
@@ -58,15 +96,64 @@ const ReportList = ({ dangerOnly = false }) => {
         </div>
       </div>
 
+      {/* Filter Section */}
+      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-5 items-center mb-6">
+        <div className="flex items-center gap-2 text-gray-700 font-semibold md:pr-4 md:border-r border-gray-100">
+          <Filter className="w-5 h-5 text-blue-600" />
+          <span>Filter</span>
+        </div>
+        <div className="w-full sm:flex-1">
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lokasi Drainase</label>
+          <select 
+            className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer outline-none text-sm font-medium"
+            value={filterDrainage}
+            onChange={(e) => setFilterDrainage(e.target.value)}
+          >
+            <option value="all">Semua Saluran</option>
+            {drainages.map(d => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+        
+        {!dangerOnly && (
+          <div className="w-full sm:flex-1">
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Status Kondisi</label>
+            <select 
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer outline-none text-sm font-medium"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Semua Status</option>
+              <option value="Clear">🟢 Aman (Clear)</option>
+              <option value="Warning">🟡 Waspada (Warning)</option>
+              <option value="Danger">🔴 Bahaya (Danger)</option>
+            </select>
+          </div>
+        )}
+
+        <div className="w-full sm:flex-1 relative">
+          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Waktu Laporan</label>
+          <CustomDatePicker 
+            startDate={filterStartDate}
+            endDate={filterEndDate}
+            onChange={(start, end) => {
+              setFilterStartDate(start);
+              setFilterEndDate(end);
+            }}
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center py-10 text-gray-500">Memuat laporan...</div>
-      ) : reports.length === 0 ? (
+      ) : filteredReports.length === 0 ? (
         <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-100">
-          Belum ada laporan {dangerOnly ? 'kritis' : ''}.
+          Tidak ada laporan yang sesuai dengan filter yang dipilih.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reports.map((report) => (
+          {filteredReports.map((report) => (
             <Card key={report.id} className="hover:shadow-lg transition-shadow duration-300">
               <div className="flex justify-between items-start mb-4">
                 <div>
