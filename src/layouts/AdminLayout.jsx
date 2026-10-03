@@ -7,14 +7,16 @@ import logoLight from '../assets/images/LOGO-DRAINASE2.jpg';
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/master', label: 'Master Data', icon: Database },
-  { path: '/admin/reports', label: 'Laporan Warga', icon: ClipboardList },
+  { path: '/admin/reports', label: 'Laporan', icon: ClipboardList },
   { path: '/admin/emergency', label: 'Darurat', icon: AlertTriangle },
-  { path: '/admin/settings', label: 'Pengaturan', icon: Settings },
 ];
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const user = JSON.parse(localStorage.getItem('user')) || { username: 'Admin', role: 'Administrator' };
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -72,14 +74,18 @@ const AdminLayout = () => {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Mobile Top Header */}
-        <header className="md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 justify-between sticky top-0 z-10">
-          <div className="flex items-center">
+        <header className={`md:hidden h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-4 justify-between sticky top-0 ${isMobileMenuOpen ? 'z-50' : 'z-30'}`}>
+          <div className="flex items-center relative z-50">
             <img src={logoLight} alt="SI-Drainase Logo" className="h-8 w-auto mr-3 object-contain rounded-md" />
             <h1 className="font-bold text-gray-800">SI-Drainase</h1>
           </div>
-          <button className="p-2 text-gray-500 rounded-xl hover:bg-gray-50">
-             <Menu className="w-5 h-5" />
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 text-gray-500 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-colors relative z-50"
+          >
+             <Menu className="w-6 h-6" />
           </button>
+
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-28 md:pb-8">
@@ -90,8 +96,8 @@ const AdminLayout = () => {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 z-50 px-6 py-2 pb-safe shadow-[0_-4px_25px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex justify-between items-center relative">
+      <div className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 z-40 px-2 py-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+        <div className="flex justify-around items-center max-w-md mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -100,15 +106,28 @@ const AdminLayout = () => {
                 to={item.path}
                 end={item.path === '/admin'}
                 className={({ isActive }) =>
-                  `flex flex-col items-center justify-center p-2 rounded-xl min-w-[64px] transition-all duration-300 ${
-                    isActive ? 'text-blue-600 -translate-y-1' : 'text-gray-400 hover:text-gray-600'
+                  `flex flex-col items-center justify-center w-16 h-14 relative transition-all duration-300 ${
+                    isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`w-6 h-6 mb-1 transition-all duration-300 ${isActive ? 'drop-shadow-md' : ''}`} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-medium transition-all">{item.label}</span>
+                    {/* Active Background Pill */}
+                    {isActive && (
+                      <span className="absolute inset-0 bg-blue-50/80 rounded-2xl -z-10 scale-95 transition-transform duration-300"></span>
+                    )}
+                    <Icon 
+                      className={`w-5 h-5 mb-1 transition-all duration-300 ${isActive ? '-translate-y-0.5' : ''}`} 
+                      strokeWidth={isActive ? 2.5 : 2} 
+                    />
+                    <span 
+                      className={`text-[10px] font-semibold transition-all duration-300 tracking-tight ${
+                        isActive ? 'opacity-100' : 'opacity-80 font-medium'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
                   </>
                 )}
               </NavLink>
@@ -116,6 +135,42 @@ const AdminLayout = () => {
           })}
         </div>
       </div>
+
+      {/* Mobile Dropdown Menu (Moved outside header to avoid backdrop-filter trap) */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-[60] bg-gray-900/30 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="fixed top-20 right-4 w-60 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[70] transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-gray-50 bg-gradient-to-br from-blue-50/50 to-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                  {(user.username || 'A')[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 text-sm truncate">{user.username}</p>
+                  <p className="text-xs text-blue-600 font-medium capitalize truncate">{user.role}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-2">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLogoutClick();
+                }} 
+                className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-3" />
+                Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal 
         isOpen={showLogoutModal} 
