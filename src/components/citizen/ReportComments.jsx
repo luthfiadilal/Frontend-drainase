@@ -4,8 +4,11 @@ import axiosInstance from '../../api/axiosInstance';
 import { MessageCircle, Send, Image as ImageIcon, X, CornerDownRight, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import { AuthContext } from '../../contexts/AuthContext';
+import popSoundFile from '../../assets/sound-effect/mixkit-long-pop-2358.wav';
 
 const ReportComments = ({ reportId }) => {
+  const { user } = React.useContext(AuthContext);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [pseudonym, setPseudonym] = useState('');
@@ -31,6 +34,9 @@ const ReportComments = ({ reportId }) => {
     });
 
     newSocket.on('new_comment', (comment) => {
+      const audio = new Audio(popSoundFile);
+      audio.play().catch(err => console.error('Audio play failed:', err));
+
       setComments((prev) => [...prev, comment]);
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -64,12 +70,13 @@ const ReportComments = ({ reportId }) => {
     try {
       const formData = new FormData();
       formData.append('comment_text', newComment);
-      if (pseudonym) formData.append('pseudonym', pseudonym);
+      if (user) {
+        formData.append('user_id', user.id);
+      } else if (pseudonym) {
+        formData.append('pseudonym', pseudonym);
+      }
       if (selectedImage) formData.append('image', selectedImage);
       if (replyTo) formData.append('parent_id', replyTo.id);
-
-      // In real app, user_id comes from auth context. For now we assume anonymous if no user_id.
-      // If user is logged in, you would append 'user_id' from auth context.
 
       await axiosInstance.post(`/comments/${reportId}`, formData, {
         headers: {
@@ -202,7 +209,7 @@ const ReportComments = ({ reportId }) => {
 
         <form onSubmit={handleSubmit} className={`flex items-end gap-2 bg-white p-2 border border-gray-200 shadow-sm ${replyTo ? 'rounded-b-xl rounded-tr-xl' : 'rounded-2xl'}`}>
           <div className="flex-1 flex flex-col gap-2">
-            {!replyTo && ( // Only show pseudonym if not replying, or always. Let's show always but small
+            {!replyTo && !user && ( // Only show pseudonym if not replying, or always. Let's show always but small
               <input 
                 type="text" 
                 placeholder="Nama Samaran (Opsional)" 
@@ -210,6 +217,11 @@ const ReportComments = ({ reportId }) => {
                 onChange={(e) => setPseudonym(e.target.value)}
                 className="text-xs bg-transparent border-b border-gray-100 px-3 py-1.5 focus:outline-none focus:border-blue-400 text-gray-700"
               />
+            )}
+            {!replyTo && user && (
+              <div className="text-xs bg-transparent border-b border-gray-100 px-3 py-1.5 text-blue-600 font-semibold flex items-center">
+                Mengomentari sebagai: {user.username} ({user.role})
+              </div>
             )}
             <textarea 
               placeholder="Tulis komentar..."

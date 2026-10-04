@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
+import { AuthContext } from '../contexts/AuthContext';
+import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList, Check } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
 import logoLight from '../assets/images/LOGO-DRAINASE2.jpg';
+import { io } from 'socket.io-client';
+import urgentSoundFile from '../assets/sound-effect/mixkit-urgent-simple-tone-loop-2976.wav';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -16,16 +19,52 @@ const AdminLayout = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const user = JSON.parse(localStorage.getItem('user')) || { username: 'Admin', role: 'Administrator' };
+  const { user, logoutContext } = React.useContext(AuthContext);
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    // Request Notification permission
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+
+    if (user && user.role === 'Admin') {
+      const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : "http://localhost:5000");
+      const socket = io(socketUrl, {
+        transports: ['websocket']
+      });
+
+      socket.on("danger_report", (data) => {
+        const audio = new Audio(urgentSoundFile);
+        audio.play().catch(err => console.error('Audio play failed:', err));
+
+        setToastMessage(data.message);
+        setTimeout(() => setToastMessage(''), 8000);
+
+        // System Notification (Muncul di background/OS)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Darurat: Laporan Drainase', {
+            body: data.message,
+            icon: logoLight, 
+            requireInteraction: true // Notifikasi tetap ada sampai di-klik
+          });
+        }
+      });
+
+      return () => socket.disconnect();
+    }
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
 
   const executeLogout = () => {
-    // Clear any auth tokens if added in the future
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logoutContext();
     setShowLogoutModal(false);
     navigate('/login', { replace: true });
   };
@@ -33,6 +72,16 @@ const AdminLayout = () => {
   return (
     <div className="flex h-screen bg-gray-50/50">
       
+      {/* Toast Alert for Admin */}
+      {toastMessage && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
+          <div className="bg-red-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-red-500 font-medium cursor-pointer" onClick={() => setToastMessage('')}>
+            <AlertTriangle className="w-6 h-6 animate-pulse text-white" />
+            <span className="text-sm">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 shadow-sm z-10">
         <div className="h-16 flex items-center px-6 border-b border-gray-50">

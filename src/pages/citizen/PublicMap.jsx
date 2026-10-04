@@ -18,6 +18,8 @@ import logoLight from "../../assets/images/LOGO-DRAINASE2.jpg";
 import ReportTimelineCard from "../../components/citizen/ReportTimelineCard";
 import ReportDetailModal from "../../components/common/ReportDetailModal";
 import ReportCommentModal from "../../components/common/ReportCommentModal";
+import alertSoundFile from "../../assets/sound-effect/mixkit-software-interface-start-2574.wav";
+import infoSoundFile from "../../assets/sound-effect/mixkit-digital-quick-tone-2866.wav";
 
 const createCustomIcon = (color, isDanger = false) => {
   return L.divIcon({
@@ -42,6 +44,7 @@ const PublicMap = () => {
   const [commentReport, setCommentReport] = useState(null);
   const [dangerDrainageId, setDangerDrainageId] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [infoToastMessage, setInfoToastMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +56,9 @@ const PublicMap = () => {
       transports: ['websocket']
     });
     socket.on("danger_report", (data) => {
+      const audio = new Audio(alertSoundFile);
+      audio.play().catch(err => console.error('Audio play failed:', err));
+
       setToastMessage(data.message);
       setDangerDrainageId(data.drainageId);
       
@@ -69,6 +75,38 @@ const PublicMap = () => {
         setDangerDrainageId(null);
       }, 6000);
     });
+
+    socket.on("new_report", (data) => {
+      // Don't play info sound if it's Danger (danger_report handles it)
+      if (data.statusResult !== 'Danger') {
+        const audio = new Audio(infoSoundFile);
+        audio.play().catch(err => console.error('Audio play failed:', err));
+        
+        setInfoToastMessage(data.message);
+        
+        // Update pin color if applicable
+        if (data.statusResult === 'Clear') {
+          setDrainages(prev => prev.map(d => d.id === data.drainageId ? { ...d, current_pin_color: "#28A745", current_condition_status: "Clear" } : d));
+        } else if (data.statusResult === 'Warning') {
+          setDrainages(prev => prev.map(d => d.id === data.drainageId ? { ...d, current_pin_color: "#FFC107", current_condition_status: "Warning" } : d));
+        }
+
+        setTimeout(() => setInfoToastMessage(''), 6000);
+        
+        // Show web notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Info Drainase Baru', {
+            body: data.message,
+            icon: logoLight
+          });
+        }
+      }
+    });
+
+    // Request Notification Permission for citizens too
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
 
     return () => socket.disconnect();
   }, []);
@@ -120,12 +158,22 @@ const PublicMap = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 flex-col md:flex-row relative">
-      {/* Toast Alert */}
+      {/* Toast Alert Danger */}
       {toastMessage && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
           <div className="bg-red-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-red-500 font-medium">
             <AlertTriangle className="w-6 h-6 animate-pulse text-white" />
             <span className="text-sm">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Alert Info */}
+      {infoToastMessage && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[2000] animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-500">
+          <div className="bg-blue-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-blue-500 font-medium">
+            <Info className="w-6 h-6 animate-pulse text-white" />
+            <span className="text-sm">{infoToastMessage}</span>
           </div>
         </div>
       )}

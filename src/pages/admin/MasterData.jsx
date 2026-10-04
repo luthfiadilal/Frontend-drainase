@@ -111,7 +111,7 @@ const MasterData = () => {
       else if (activeTab === 'aspect') setFormData({ name: '', weight: '' });
       else if (activeTab === 'indicator') setFormData({ aspect_id: '', name: '', weight: '' });
       else if (activeTab === 'indicator_option') setFormData({ indicator_id: '', score: '', description: '', calculated_weight: '' });
-      else if (activeTab === 'user') setFormData({ name: '', email: '', role: 'Surveyor', password: '' });
+      else if (activeTab === 'user') setFormData({ name: '', email: '', role: 'Admin', password: '' });
     }
     setShowFormModal(true);
   };
@@ -457,10 +457,7 @@ const MasterData = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
-            <select required value={formData.role || ''} onChange={(e) => setFormData({...formData, role: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="Surveyor">Surveyor</option>
-              <option value="Admin">Admin</option>
-            </select>
+            <input required type="text" value={formData.role || 'Admin'} readOnly className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 outline-none cursor-not-allowed text-gray-500" />
           </div>
           {formMode === 'create' && (
             <div>

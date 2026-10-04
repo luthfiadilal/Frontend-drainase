@@ -4,11 +4,13 @@ import Button from '../../components/common/Button';
 import { useState } from 'react';
 import { Mail, Lock, Droplets } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { AuthContext } from '../../contexts/AuthContext';
 import { login } from '../../services/authService';
 import logoLight from '../../assets/images/LOGO-DRAINASE2.jpg';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { loginContext } = React.useContext(AuthContext);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,6 +26,13 @@ const Login = () => {
     try {
       const res = await login(formData);
       if (res && res.success) {
+        // Simpan data user (session) via context
+        loginContext({
+          id: res.data.id,
+          username: res.data.name,
+          email: res.data.email,
+          role: res.data.role
+        });
         navigate('/admin');
       } else {
         setError(res.message || 'Login gagal.');
