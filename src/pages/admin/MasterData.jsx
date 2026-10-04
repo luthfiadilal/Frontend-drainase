@@ -449,11 +449,11 @@ const MasterData = () => {
         <>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Pengguna</label>
-            <input required type="text" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nama Lengkap" />
+            <input required type="text" autoComplete="off" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nama Lengkap" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-            <input required type="email" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="email@contoh.com" />
+            <input required type="email" autoComplete="off" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="email@contoh.com" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
@@ -462,7 +462,7 @@ const MasterData = () => {
           {formMode === 'create' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-              <input required type="password" value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="******" />
+              <input required type="password" autoComplete="new-password" value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="******" />
             </div>
           )}
         </>
