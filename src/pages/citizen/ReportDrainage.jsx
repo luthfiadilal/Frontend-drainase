@@ -7,6 +7,7 @@ import {
   getIndicators,
   getIndicatorOptions,
 } from "../../services/masterDataService";
+import { compressImage } from "../../utils/imageCompressor";
 import { useLocation, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import {
@@ -90,9 +91,10 @@ const ReportDrainage = () => {
       formData.append("options", JSON.stringify(optionVals));
 
       if (images && images.length > 0) {
-        Array.from(images).forEach((file) => {
-          formData.append("images", file);
-        });
+        for (let i = 0; i < images.length; i++) {
+          const compressedFile = await compressImage(images[i]);
+          formData.append("images", compressedFile);
+        }
       }
 
       const res = await axiosInstance.post("/drainage-reports", formData, {
@@ -422,6 +424,17 @@ const ReportDrainage = () => {
           )}
         </Card>
       </div>
+
+      {/* Modal Loading */}
+      {loading && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-2xl flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200 w-full max-w-sm mx-4 text-center">
+            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <h3 className="text-lg font-bold text-gray-900">Memproses Laporan...</h3>
+            <p className="text-sm text-gray-500 mt-1">Sistem sedang mengompresi gambar dan mengirim data ke server. Mohon tunggu sebentar.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

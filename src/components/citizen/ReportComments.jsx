@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { AuthContext } from '../../contexts/AuthContext';
 import popSoundFile from '../../assets/sound-effect/mixkit-long-pop-2358.wav';
+import { compressImage } from '../../utils/imageCompressor';
 
 const ReportComments = ({ reportId }) => {
   const { user } = React.useContext(AuthContext);
@@ -75,7 +76,10 @@ const ReportComments = ({ reportId }) => {
       } else if (pseudonym) {
         formData.append('pseudonym', pseudonym);
       }
-      if (selectedImage) formData.append('image', selectedImage);
+      if (selectedImage) {
+        const compressedImage = await compressImage(selectedImage);
+        formData.append('image', compressedImage);
+      }
       if (replyTo) formData.append('parent_id', replyTo.id);
 
       await axiosInstance.post(`/comments/${reportId}`, formData, {

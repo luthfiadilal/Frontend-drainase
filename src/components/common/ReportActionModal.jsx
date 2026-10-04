@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronDown, ChevronRight, Camera } from 'lucide-react';
 import Button from './Button';
 import { getAspects, getIndicators, getIndicatorOptions, createAction } from '../../services/masterDataService';
+import { compressImage } from '../../utils/imageCompressor';
 
 const ReportActionModal = ({ report, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
@@ -66,9 +67,10 @@ const ReportActionModal = ({ report, onClose, onSuccess }) => {
       formData.append("options", JSON.stringify(optionVals));
 
       if (images && images.length > 0) {
-        Array.from(images).forEach((file) => {
-          formData.append("images", file);
-        });
+        for (let i = 0; i < images.length; i++) {
+          const compressedFile = await compressImage(images[i]);
+          formData.append("images", compressedFile);
+        }
       }
 
       const res = await createAction(formData);
