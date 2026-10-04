@@ -3,6 +3,7 @@ import Card from '../../components/common/Card';
 import RegionMap from '../../components/map/RegionMap';
 import { Activity, Map as MapIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { getDrainages, getReports } from '../../services/masterDataService';
+import { io } from 'socket.io-client';
 const StatCard = ({ title, value, icon: Icon, colorClass, bgColorClass }) => (
   <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-default">
     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-4 ${bgColorClass}`}>
@@ -41,6 +42,32 @@ const Dashboard = () => {
           setStats(prev => ({ ...prev, newReports }));
         }
       }).catch(err => console.error(err));
+
+    // Listen for socket events to update stats dynamically
+    const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : "http://localhost:5000");
+    const socket = io(socketUrl, { transports: ['websocket'] });
+
+    socket.on("new_report", (data) => {
+      // Re-fetch drainages and reports silently to update stats perfectly without page refresh
+      getDrainages().then(res => {
+        if(res && res.success) {
+          const drainages = res.data;
+          const total = drainages.length;
+          const danger = drainages.filter(d => d.current_condition_status === 'Danger' || d.current_condition_status === 'Bahaya').length;
+          const safe = drainages.filter(d => !d.current_condition_status || d.current_condition_status === 'Clear' || d.current_condition_status === 'Aman').length;
+          setStats(prev => ({ ...prev, total, danger, safe }));
+          setReports(drainages.slice(0, 4));
+        }
+      });
+      getReports().then(res => {
+        if(res && res.success) {
+          const newReports = res.data.filter(r => r.verification_status === 'pending' || !r.verification_status).length;
+          setStats(prev => ({ ...prev, newReports }));
+        }
+      });
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   return (

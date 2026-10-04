@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getRegions } from '../../services/regionService';
 import { getDrainages } from '../../services/masterDataService';
+import { io } from 'socket.io-client';
 
 const createCustomIcon = (color) => {
   return L.divIcon({
@@ -36,6 +37,20 @@ const RegionMap = () => {
         }
       })
       .catch(err => console.error("Error fetching drainages:", err));
+
+    // Listen for realtime updates
+    const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : "http://localhost:5000");
+    const socket = io(socketUrl, { transports: ['websocket'] });
+
+    socket.on("new_report", (data) => {
+      setDrainages(prev => prev.map(d => 
+        d.id === data.drainageId 
+          ? { ...d, current_pin_color: data.pinColor || "#DC3545", current_condition_status: data.statusResult }
+          : d
+      ));
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const onEachFeature = (feature, layer) => {
@@ -91,7 +106,7 @@ const RegionMap = () => {
         )}
         {drainages.map((d) => (
           <Marker
-            key={d.id}
+            key={`${d.id}-${d.current_pin_color}`}
             position={[d.latitude, d.longitude]}
             icon={createCustomIcon(d.current_pin_color || "#6C757D")}
           >

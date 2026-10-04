@@ -62,12 +62,15 @@ const PublicMap = () => {
       setToastMessage(data.message);
       setDangerDrainageId(data.drainageId);
       
-      // Secara instan ubah warna pin di map menjadi merah (Danger)
+      // Secara instan ubah warna pin di map
       setDrainages(prev => prev.map(d => 
         d.id === data.drainageId 
-          ? { ...d, current_pin_color: "#DC3545", current_condition_status: "Danger" }
+          ? { ...d, current_pin_color: data.pinColor || "#DC3545", current_condition_status: data.statusResult, current_total_score: data.totalScore }
           : d
       ));
+      
+      // Update selected drainage dynamically if it is the one currently selected
+      setSelectedDrainage(prev => prev && prev.id === data.drainageId ? { ...prev, current_pin_color: data.pinColor || "#DC3545", current_condition_status: data.statusResult, current_total_score: data.totalScore } : prev);
 
       // Auto-hide alert and pulse after 6 seconds
       setTimeout(() => {
@@ -84,12 +87,15 @@ const PublicMap = () => {
         
         setInfoToastMessage(data.message);
         
-        // Update pin color if applicable
-        if (data.statusResult === 'Clear') {
-          setDrainages(prev => prev.map(d => d.id === data.drainageId ? { ...d, current_pin_color: "#28A745", current_condition_status: "Clear" } : d));
-        } else if (data.statusResult === 'Warning') {
-          setDrainages(prev => prev.map(d => d.id === data.drainageId ? { ...d, current_pin_color: "#FFC107", current_condition_status: "Warning" } : d));
-        }
+        // Update pin color and status for ANY condition
+        setDrainages(prev => prev.map(d => 
+          d.id === data.drainageId 
+            ? { ...d, current_pin_color: data.pinColor, current_condition_status: data.statusResult, current_total_score: data.totalScore } 
+            : d
+        ));
+        
+        // Update selected drainage dynamically if it is the one currently selected
+        setSelectedDrainage(prev => prev && prev.id === data.drainageId ? { ...prev, current_pin_color: data.pinColor, current_condition_status: data.statusResult, current_total_score: data.totalScore } : prev);
 
         setTimeout(() => setInfoToastMessage(''), 6000);
         
@@ -258,7 +264,7 @@ const PublicMap = () => {
 
           {drainages.map((d) => (
             <Marker
-              key={d.id}
+              key={`${d.id}-${d.current_pin_color}-${d.id === dangerDrainageId}`}
               position={[d.latitude, d.longitude]}
               icon={createCustomIcon(d.current_pin_color || "#6C757D", d.id === dangerDrainageId)}
               eventHandlers={{ click: () => handleMarkerClick(d) }}
