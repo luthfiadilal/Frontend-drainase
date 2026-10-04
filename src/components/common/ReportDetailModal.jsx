@@ -76,7 +76,7 @@ const ReportDetailModal = ({ report, onClose }) => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {report.DrainageReportImages.map(img => (
                       <div key={img.id} className="aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
-                        <img src={`http://localhost:5000${img.image_url}`} alt="Bukti" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000').replace('/api', '')}${img.image_url}`} alt="Bukti" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                       </div>
                     ))}
                   </div>

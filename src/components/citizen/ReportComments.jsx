@@ -133,7 +133,7 @@ const ReportComments = ({ reportId }) => {
           
           {comment.image_url && (
             <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 max-w-sm">
-              <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${comment.image_url}`} alt="Lampiran" className="w-full h-auto object-cover" />
+              <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000').replace('/api', '')}${comment.image_url}`} alt="Lampiran" className="w-full h-auto object-cover" />
             </div>
           )}
           
