@@ -48,7 +48,8 @@ const PublicMap = () => {
     fetchMapData();
 
     // Socket connection for Danger alerts
-    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
+    const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : "http://localhost:5000");
+    const socket = io(socketUrl, {
       transports: ['websocket']
     });
     socket.on("danger_report", (data) => {
