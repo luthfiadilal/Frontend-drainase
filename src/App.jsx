@@ -11,6 +11,7 @@ import ReportDrainage from './pages/citizen/ReportDrainage';
 import ReportList from './pages/admin/ReportList';
 
 import PublicMap from './pages/citizen/PublicMap';
+import HomePage from './pages/citizen/HomePage';
 
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -19,7 +20,8 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PublicMap />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/map" element={<PublicMap />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/lapor" element={<ReportDrainage />} />

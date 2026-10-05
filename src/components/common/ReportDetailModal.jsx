@@ -75,8 +75,11 @@ const ReportDetailModal = ({ report, onClose }) => {
                   </h5>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {report.DrainageReportImages.map(img => (
-                      <div key={img.id} className="aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
+                      <div key={img.id} className="aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 relative group">
                         <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img.image_url}`} alt="Bukti" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md font-medium backdrop-blur-sm pointer-events-none z-10 shadow-sm">
+                          {formatDate(report.report_date)}
+                        </div>
                       </div>
                     ))}
                   </div>
