@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, ChevronDown, ChevronRight, Camera } from 'lucide-react';
+import { X, CheckCircle2, ChevronDown, ChevronRight, Camera, Image as ImageIcon } from 'lucide-react';
 import Button from './Button';
 import { getAspects, getIndicators, getIndicatorOptions, createAction } from '../../services/masterDataService';
 import { compressImage } from '../../utils/imageCompressor';
+import CameraModal from './CameraModal';
 
 const ReportActionModal = ({ report, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
@@ -22,6 +23,18 @@ const ReportActionModal = ({ report, onClose, onSuccess }) => {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [expandedAspect, setExpandedAspect] = useState(null);
   const [expandedIndicator, setExpandedIndicator] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setImages((prev) => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     if (report) {
@@ -144,7 +157,52 @@ const ReportActionModal = ({ report, onClose, onSuccess }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center"><Camera className="w-4 h-4 mr-2" /> Foto Bukti Perbaikan</label>
-                <input type="file" multiple accept="image/*" onChange={(e) => setImages(e.target.files)} className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <div className="flex gap-3 mb-2">
+                  <button 
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="flex-1 cursor-pointer flex flex-col items-center justify-center py-4 border-2 border-dashed border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-colors bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <Camera className="w-6 h-6 text-gray-400 mb-2" />
+                    <span className="text-xs font-medium text-gray-600">Buka Kamera</span>
+                  </button>
+                  <label className="flex-1 cursor-pointer flex flex-col items-center justify-center py-4 border-2 border-dashed border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-colors bg-white">
+                    <ImageIcon className="w-6 h-6 text-gray-400 mb-2" />
+                    <span className="text-xs font-medium text-gray-600">Pilih Galeri</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {images && images.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                    {images.map((file, index) => (
+                      <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`Preview ${index}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 md:opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {images && images.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {images.length} foto dipilih
+                  </p>
+                )}
               </div>
             </div>
           ) : (
@@ -221,6 +279,13 @@ const ReportActionModal = ({ report, onClose, onSuccess }) => {
           </div>
         )}
       </div>
+
+      {isCameraOpen && (
+        <CameraModal 
+          onCapture={(file) => setImages(prev => [...prev, file])} 
+          onClose={() => setIsCameraOpen(false)} 
+        />
+      )}
     </div>
   );
 };
