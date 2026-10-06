@@ -15,7 +15,7 @@ const createCustomIcon = (color) => {
   });
 };
 
-const RegionMap = () => {
+const RegionMap = ({ onMarkerClick }) => {
   const [geoData, setGeoData] = useState(null);
   const [drainages, setDrainages] = useState([]);
 
@@ -109,22 +109,29 @@ const RegionMap = () => {
             key={`${d.id}-${d.current_pin_color}`}
             position={[d.latitude, d.longitude]}
             icon={createCustomIcon(d.current_pin_color || "#6C757D")}
+            eventHandlers={{
+              click: () => {
+                if (onMarkerClick) onMarkerClick(d);
+              }
+            }}
           >
-            <Popup>
-              <div style={{ textAlign: 'center', fontFamily: 'sans-serif' }}>
-                <b style={{ color: '#1f2937', display: 'block', marginBottom: '4px' }}>{d.name}</b>
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  padding: '2px 8px', 
-                  borderRadius: '9999px', 
-                  color: 'white', 
-                  display: 'inline-block', 
-                  backgroundColor: d.current_condition_status === 'Danger' ? '#DC3545' : d.current_condition_status === 'Warning' ? '#FFC107' : '#28A745' 
-                }}>
-                  Status: {d.current_condition_status || 'Clear'}
-                </span>
-              </div>
-            </Popup>
+            {!onMarkerClick && (
+              <Popup>
+                <div style={{ textAlign: 'center', fontFamily: 'sans-serif' }}>
+                  <b style={{ color: '#1f2937', display: 'block', marginBottom: '4px' }}>{d.name}</b>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    padding: '2px 8px', 
+                    borderRadius: '9999px', 
+                    color: 'white', 
+                    display: 'inline-block', 
+                    backgroundColor: d.current_condition_status === 'Danger' ? '#DC3545' : d.current_condition_status === 'Warning' ? '#FFC107' : '#28A745' 
+                  }}>
+                    Status: {d.current_condition_status || 'Clear'}
+                  </span>
+                </div>
+              </Popup>
+            )}
           </Marker>
         ))}
       </MapContainer>

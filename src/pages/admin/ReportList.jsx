@@ -62,6 +62,16 @@ const ReportList = ({ dangerOnly = false }) => {
     return 'bg-green-100 text-green-800 border-green-200';
   };
 
+  const getVerificationBadge = (status) => {
+    switch(status) {
+      case 'verified': return <span className="inline-flex px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold rounded-md tracking-wider">Verified</span>;
+      case 'rejected': return <span className="inline-flex px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 text-[10px] uppercase font-bold rounded-md tracking-wider">Rejected</span>;
+      case 'in_progress': return <span className="inline-flex px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] uppercase font-bold rounded-md tracking-wider">In Progress</span>;
+      case 'completed': return <span className="inline-flex px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] uppercase font-bold rounded-md tracking-wider">Completed</span>;
+      default: return <span className="inline-flex px-2 py-0.5 bg-gray-50 text-gray-600 border border-gray-200 text-[10px] uppercase font-bold rounded-md tracking-wider">Pending</span>;
+    }
+  };
+
   const openDetail = (report) => {
     setSelectedReport(report);
   };
@@ -156,12 +166,15 @@ const ReportList = ({ dangerOnly = false }) => {
           {filteredReports.map((report) => (
             <Card key={report.id} className="hover:shadow-lg transition-shadow duration-300">
               <div className="flex justify-between items-start mb-4">
-                <div>
+                <div className="flex flex-col gap-1.5 items-start">
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusStyle(report.status_result)}`}>
                     {report.status_result === 'Danger' && <AlertTriangle className="w-3 h-3 mr-1" />}
                     {report.status_result === 'Clear' && <CheckCircle2 className="w-3 h-3 mr-1" />}
                     {report.status_result}
                   </span>
+                  <div className="flex items-center mt-1.5">
+                    {getVerificationBadge(report.verification_status || 'pending')}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-400 flex items-center">
                   <Clock className="w-3 h-3 mr-1" />
@@ -213,6 +226,9 @@ const ReportList = ({ dangerOnly = false }) => {
       <ReportDetailModal 
         report={selectedReport} 
         onClose={() => setSelectedReport(null)} 
+        onUpdate={() => {
+          fetchReports();
+        }}
       />
       
       <ReportActionModal

@@ -20,6 +20,7 @@ import ReportDetailModal from "../../components/common/ReportDetailModal";
 import ReportCommentModal from "../../components/common/ReportCommentModal";
 import alertSoundFile from "../../assets/sound-effect/mixkit-software-interface-start-2574.wav";
 import infoSoundFile from "../../assets/sound-effect/mixkit-digital-quick-tone-2866.wav";
+import { AuthContext } from "../../contexts/AuthContext";
 
 const createCustomIcon = (color, isDanger = false) => {
   return L.divIcon({
@@ -36,6 +37,7 @@ const createCustomIcon = (color, isDanger = false) => {
 };
 
 const PublicMap = () => {
+  const { user, logoutContext } = React.useContext(AuthContext);
   const [drainages, setDrainages] = useState([]);
   const [regions, setRegions] = useState(null);
   const [selectedDrainage, setSelectedDrainage] = useState(null);
@@ -190,24 +192,64 @@ const PublicMap = () => {
           <img src={logoLight} alt="SI-Drainase Logo" className="h-8 w-auto mr-2 object-contain rounded-md" />
           <h1 className="font-bold text-gray-900 text-sm">SI-Drainase</h1>
         </div>
-        <button
-          onClick={() => navigate("/login")}
-          className="text-blue-600 text-xs font-semibold px-3 py-1.5 bg-blue-50 rounded-lg"
-        >
-          Login Admin
-        </button>
+        {user && user.role?.toLowerCase() === 'admin' ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate("/admin")}
+              className="text-blue-600 text-[10px] sm:text-xs font-bold px-2.5 py-1.5 bg-blue-50 rounded-lg whitespace-nowrap"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => { logoutContext(); navigate("/login"); }}
+              className="text-red-600 text-[10px] sm:text-xs font-bold px-2.5 py-1.5 bg-red-50 rounded-lg whitespace-nowrap"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-600 text-xs font-semibold px-3 py-1.5 bg-blue-50 rounded-lg"
+          >
+            Login Admin
+          </button>
+        )}
       </div>
       {/* Header Desktop / Login Overlay */}
       <div 
         className={`absolute top-4 z-[1000] hidden md:block transition-all duration-300`}
         style={{ right: selectedDrainage ? 'calc(24rem + 1rem)' : '1rem' }}
       >
-        <button
-          onClick={() => navigate("/login")}
-          className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 text-sm font-medium py-2 px-4 rounded-xl shadow-sm border border-gray-200 transition-colors"
-        >
-          Login Admin
-        </button>
+        {user && user.role?.toLowerCase() === 'admin' ? (
+          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-sm border border-gray-200">
+            <div className="px-3 flex items-center gap-2 border-r border-gray-100 mr-1">
+              <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                {(user.username || 'A')[0].toUpperCase()}
+              </div>
+              <span className="text-sm font-bold text-gray-800">{user.username}</span>
+            </div>
+            <button
+              onClick={() => navigate("/admin")}
+              className="text-blue-600 text-sm font-semibold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => { logoutContext(); navigate("/login"); }}
+              className="text-red-600 text-sm font-semibold hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/login")}
+            className="bg-white/90 backdrop-blur-md hover:bg-white text-gray-700 text-sm font-medium py-2 px-4 rounded-xl shadow-sm border border-gray-200 transition-colors"
+          >
+            Login Admin
+          </button>
+        )}
       </div>
 
       <div className="absolute top-4 left-4 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-100 max-w-sm hidden md:block">
@@ -239,7 +281,7 @@ const PublicMap = () => {
       </div>
 
       {/* Map Section */}
-      <div className="flex-1 relative z-0 h-[50vh] md:h-full">
+      <div className="flex-1 relative z-0 h-screen md:h-full">
         <MapContainer
           center={[-7.3274, 108.2232]}
           zoom={13}
@@ -273,9 +315,9 @@ const PublicMap = () => {
         </MapContainer>
       </div>
 
-      {/* Side Panel for Reports */}
+      {/* Side Panel for Reports (Desktop Only) */}
       <div
-        className={`w-full md:w-96 bg-white border-l border-gray-100 shadow-2xl flex flex-col transition-all duration-300 z-10 ${selectedDrainage ? "h-[50vh] md:h-full" : "hidden"}`}
+        className={`hidden ${selectedDrainage ? "md:flex" : ""} w-96 bg-white border-l border-gray-100 shadow-2xl flex-col transition-all duration-300 z-10 h-full`}
       >
         {selectedDrainage && (
           <>
@@ -368,6 +410,78 @@ const PublicMap = () => {
           </>
         )}
       </div>
+
+      {/* Mobile Detail Modal */}
+      {selectedDrainage && (
+        <div className="md:hidden fixed inset-0 z-[1500] bg-gray-900/50 backdrop-blur-sm flex items-end justify-center p-0">
+          <div className="bg-white w-full max-h-[85vh] rounded-t-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-start sticky top-0 z-10">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{selectedDrainage.name}</h2>
+                <p className="text-xs text-gray-500 flex items-center mt-1">
+                  <MapPin className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                  {selectedDrainage.address}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedDrainage(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold p-1.5 bg-white rounded-md shadow-sm border border-gray-100"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              <h3 className="text-xs font-semibold text-gray-900 mb-2 uppercase tracking-wider">Status Terkini</h3>
+              <div className="flex items-center justify-between bg-white border border-gray-100 p-3 rounded-lg shadow-sm mb-6">
+                <div>
+                  <p className="text-[11px] text-gray-500 mb-1">Tingkat kesehatan</p>
+                  <p className="text-xl font-black text-gray-900">
+                    {selectedDrainage.current_total_score
+                      ? (parseFloat(selectedDrainage.current_total_score) <= 1
+                          ? (parseFloat(selectedDrainage.current_total_score) * 100).toFixed(1).replace(/\.0$/, "")
+                          : parseFloat(selectedDrainage.current_total_score).toFixed(1).replace(/\.0$/, "")) + "%"
+                      : "0%"}
+                  </p>
+                </div>
+                <div className={`px-3 py-1.5 rounded-lg font-bold text-xs ${selectedDrainage.current_condition_status === "Danger" ? "bg-red-100 text-red-700" : selectedDrainage.current_condition_status === "Warning" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                  {selectedDrainage.current_condition_status || "Clear"}
+                </div>
+              </div>
+
+              <h3 className="text-xs font-semibold text-gray-900 mb-3 uppercase tracking-wider">Berita / Riwayat Laporan</h3>
+              {reports.length === 0 ? (
+                <p className="text-xs text-gray-500 text-center py-6">Belum ada riwayat laporan.</p>
+              ) : (
+                <div className="relative pt-1 space-y-3">
+                  {reports.map((report) => (
+                    <ReportTimelineCard
+                      key={report.id}
+                      report={report}
+                      onViewDetail={() => setDetailReport(report)}
+                      onViewComments={() => setCommentReport(report)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 shrink-0">
+              <button
+                onClick={() =>
+                  navigate("/lapor", {
+                    state: { drainageId: selectedDrainage.id },
+                  })
+                }
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-3 rounded-xl flex justify-center items-center transition-colors shadow-lg shadow-blue-500/30"
+              >
+                Buat Laporan Drainase Ini
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ReportDetailModal 
         report={detailReport} 

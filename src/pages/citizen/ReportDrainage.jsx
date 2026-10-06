@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Camera,
   Image as ImageIcon,
-  X
+  X,
 } from "lucide-react";
 
 const ReportDrainage = () => {
@@ -95,10 +95,12 @@ const ReportDrainage = () => {
       formData.append("options", JSON.stringify(optionVals));
 
       if (images && images.length > 0) {
-        for (let i = 0; i < images.length; i++) {
-          const compressedFile = await compressImage(images[i]);
+        const compressedImages = await Promise.all(
+          images.map((img) => compressImage(img)),
+        );
+        compressedImages.forEach((compressedFile) => {
           formData.append("images", compressedFile);
-        }
+        });
       }
 
       const res = await axiosInstance.post("/drainage-reports", formData, {
@@ -136,7 +138,7 @@ const ReportDrainage = () => {
     setSuccess(false);
 
     if (location.state?.drainageId) {
-      navigate("/");
+      navigate("/map");
     } else {
       setStep(1);
     }
@@ -372,17 +374,21 @@ const ReportDrainage = () => {
                     Foto Kondisi (Opsional)
                   </label>
                   <div className="flex gap-3 mb-3">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setIsCameraOpen(true)}
                       className="flex-1 cursor-pointer flex flex-col items-center justify-center py-4 border-2 border-dashed border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-colors bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <Camera className="w-6 h-6 text-gray-400 mb-2" />
-                      <span className="text-xs font-medium text-gray-600">Buka Kamera</span>
+                      <span className="text-xs font-medium text-gray-600">
+                        Buka Kamera
+                      </span>
                     </button>
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center py-4 border-2 border-dashed border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-colors bg-white">
                       <ImageIcon className="w-6 h-6 text-gray-400 mb-2" />
-                      <span className="text-xs font-medium text-gray-600">Pilih Galeri</span>
+                      <span className="text-xs font-medium text-gray-600">
+                        Pilih Galeri
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -395,7 +401,10 @@ const ReportDrainage = () => {
                   {images && images.length > 0 && (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
                       {images.map((file, index) => (
-                        <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                        <div
+                          key={index}
+                          className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200"
+                        >
                           <img
                             src={URL.createObjectURL(file)}
                             alt={`Preview ${index}`}
@@ -466,7 +475,9 @@ const ReportDrainage = () => {
                 telah dikalkulasi dan langsung memperbarui status master data.
               </p>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-                <Button variant="secondary" onClick={() => navigate("/")}>Kembali ke Peta</Button>
+                <Button variant="secondary" onClick={() => navigate("/map")}>
+                  Kembali ke Peta
+                </Button>
                 <Button onClick={resetForm}>Buat Laporan Baru</Button>
               </div>
             </div>
@@ -479,16 +490,21 @@ const ReportDrainage = () => {
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-2xl flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200 w-full max-w-sm mx-4 text-center">
             <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <h3 className="text-lg font-bold text-gray-900">Memproses Laporan...</h3>
-            <p className="text-sm text-gray-500 mt-1">Sistem sedang mengompresi gambar dan mengirim data ke server. Mohon tunggu sebentar.</p>
+            <h3 className="text-lg font-bold text-gray-900">
+              Memproses Laporan...
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Sistem sedang mengompresi gambar dan mengirim data ke server.
+              Mohon tunggu sebentar.
+            </p>
           </div>
         </div>
       )}
 
       {isCameraOpen && (
-        <CameraModal 
-          onCapture={(file) => setImages(prev => [...prev, file])} 
-          onClose={() => setIsCameraOpen(false)} 
+        <CameraModal
+          onCapture={(file) => setImages((prev) => [...prev, file])}
+          onClose={() => setIsCameraOpen(false)}
         />
       )}
     </div>

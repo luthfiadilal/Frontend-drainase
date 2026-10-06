@@ -1,7 +1,52 @@
-import React from 'react';
-import { X, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, AlertTriangle, CheckCircle2, Clock, Check, Loader2 } from 'lucide-react';
+import ImageViewerModal from './ImageViewerModal';
+import ConfirmModal from './ConfirmModal';
+import FeedbackModal from './FeedbackModal';
+import axiosInstance from '../../api/axiosInstance';
 
-const ReportDetailModal = ({ report, onClose }) => {
+const ReportDetailModal = ({ report, onClose, onUpdate }) => {
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [fullscreenWatermark, setFullscreenWatermark] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [localStatus, setLocalStatus] = useState('pending');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, newStatus: '' });
+  const [feedbackModal, setFeedbackModal] = useState({ isOpen: false, type: 'success', message: '' });
+
+  useEffect(() => {
+    if (report) {
+      setLocalStatus(report.verification_status || 'pending');
+    }
+  }, [report]);
+
+  const promptUpdateVerification = (newStatus) => {
+    setConfirmModal({ isOpen: true, newStatus });
+  };
+
+  const handleUpdateVerification = async () => {
+    const newStatus = confirmModal.newStatus;
+    setConfirmModal({ isOpen: false, newStatus: '' });
+    
+    setIsUpdating(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const userId = user ? user.id : null;
+      const res = await axiosInstance.put(`/drainage-reports/${report.id}/verification`, {
+        verification_status: newStatus,
+        user_id: userId
+      });
+      if (res.data.success) {
+        setLocalStatus(newStatus);
+        setFeedbackModal({ isOpen: true, type: 'success', message: 'Status verifikasi berhasil diperbarui.' });
+        if (onUpdate) onUpdate();
+      }
+    } catch (err) {
+      console.error(err);
+      setFeedbackModal({ isOpen: true, type: 'error', message: 'Gagal mengupdate status: ' + (err.response?.data?.message || err.message) });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (!report) return null;
 
@@ -36,12 +81,28 @@ const ReportDetailModal = ({ report, onClose }) => {
             <div className="p-6">
               <div className="bg-white p-5 rounded-xl border border-gray-100 mb-6 shadow-sm">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
+                  <div className="flex flex-col items-start gap-3">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusStyle(report.status_result)}`}>
                       {report.status_result === 'Danger' && <AlertTriangle className="w-3 h-3 mr-1" />}
                       {report.status_result === 'Clear' && <CheckCircle2 className="w-3 h-3 mr-1" />}
                       {report.status_result}
                     </span>
+                    <div className="flex items-center bg-gray-50/50 p-2 rounded-lg border border-gray-100">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mr-2">Verifikasi:</span>
+                      <select 
+                        value={localStatus}
+                        onChange={(e) => promptUpdateVerification(e.target.value)}
+                        disabled={isUpdating}
+                        className="text-xs font-bold bg-white border border-gray-200 text-gray-700 py-1 px-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer outline-none shadow-sm disabled:opacity-50"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      {isUpdating && <Loader2 className="w-3.5 h-3.5 ml-2 text-blue-500 animate-spin" />}
+                    </div>
                   </div>
                   <div className="text-xs text-gray-400 flex items-center bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                     <Clock className="w-3 h-3 mr-1" />
@@ -76,7 +137,15 @@ const ReportDetailModal = ({ report, onClose }) => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {report.DrainageReportImages.map(img => (
                       <div key={img.id} className="aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 relative group">
-                        <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img.image_url}`} alt="Bukti" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                        <img 
+                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img.image_url}`} 
+                          alt="Bukti" 
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" 
+                          onClick={() => {
+                            setFullscreenImage(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${img.image_url}`);
+                            setFullscreenWatermark(formatDate(report.report_date));
+                          }}
+                        />
                         <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md font-medium backdrop-blur-sm pointer-events-none z-10 shadow-sm">
                           {formatDate(report.report_date)}
                         </div>
@@ -157,6 +226,32 @@ const ReportDetailModal = ({ report, onClose }) => {
           </button>
         </div>
       </div>
+      
+      <ImageViewerModal 
+        imageUrl={fullscreenImage} 
+        watermark={fullscreenWatermark} 
+        onClose={() => {
+          setFullscreenImage(null);
+          setFullscreenWatermark(null);
+        }} 
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, newStatus: '' })}
+        onConfirm={handleUpdateVerification}
+        title="Konfirmasi Status Verifikasi"
+        message={`Yakin ingin mengubah status verifikasi laporan ini menjadi ${confirmModal.newStatus?.toUpperCase()}?`}
+        confirmText="Ubah Status"
+        isDanger={false}
+      />
+
+      <FeedbackModal
+        isOpen={feedbackModal.isOpen}
+        onClose={() => setFeedbackModal({ isOpen: false, type: 'success', message: '' })}
+        type={feedbackModal.type}
+        message={feedbackModal.message}
+      />
     </div>
   );
 };

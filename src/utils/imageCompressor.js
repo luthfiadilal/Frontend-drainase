@@ -1,46 +1,32 @@
-export const compressImage = (file, maxWidth = 1024, quality = 0.7) => {
-  return new Promise((resolve, reject) => {
-    if (!file || !file.type.match(/image.*/)) {
-      return resolve(file);
-    }
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
+import imageCompression from 'browser-image-compression';
 
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
+export const compressImage = async (file, maxWidth = 1024, quality = 0.7) => {
+  if (!file || !file.type.match(/image.*/)) {
+    return file;
+  }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+  const options = {
+    maxSizeMB: 1, // Target size in MB
+    maxWidthOrHeight: maxWidth,
+    useWebWorker: true, // Use Web Workers for faster processing off the main thread
+    initialQuality: quality,
+    fileType: 'image/jpeg'
+  };
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              return resolve(file);
-            }
-            const newFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            });
-            resolve(newFile);
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = (error) => reject(error);
-    };
-    reader.onerror = (error) => reject(error);
-  });
+  try {
+    const compressedBlob = await imageCompression(file, options);
+    // Create a new File object with a .jpg extension
+    const newFile = new File(
+      [compressedBlob], 
+      file.name.replace(/\.[^/.]+$/, "") + ".jpg", 
+      {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      }
+    );
+    return newFile;
+  } catch (error) {
+    console.error("Gagal melakukan kompresi gambar:", error);
+    return file; // Fallback to original file if compression fails
+  }
 };

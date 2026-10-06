@@ -80,10 +80,12 @@ const ReportActionModal = ({ report, onClose, onSuccess }) => {
       formData.append("options", JSON.stringify(optionVals));
 
       if (images && images.length > 0) {
-        for (let i = 0; i < images.length; i++) {
-          const compressedFile = await compressImage(images[i]);
+        const compressedImages = await Promise.all(
+          images.map((img) => compressImage(img))
+        );
+        compressedImages.forEach((compressedFile) => {
           formData.append("images", compressedFile);
-        }
+        });
       }
 
       const res = await createAction(formData);

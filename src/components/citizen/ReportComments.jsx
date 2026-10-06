@@ -7,6 +7,7 @@ import { id as localeId } from 'date-fns/locale';
 import { AuthContext } from '../../contexts/AuthContext';
 import popSoundFile from '../../assets/sound-effect/mixkit-long-pop-2358.wav';
 import { compressImage } from '../../utils/imageCompressor';
+import ImageViewerModal from '../common/ImageViewerModal';
 
 const ReportComments = ({ reportId }) => {
   const { user } = React.useContext(AuthContext);
@@ -17,6 +18,8 @@ const ReportComments = ({ reportId }) => {
   const [replyTo, setReplyTo] = useState(null); // { id, name }
   const [socket, setSocket] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [fullscreenWatermark, setFullscreenWatermark] = useState(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -110,48 +113,85 @@ const ReportComments = ({ reportId }) => {
   const parentComments = comments.filter(c => !c.parent_id);
   const childComments = comments.filter(c => c.parent_id);
 
-  const renderComment = (comment, isReply = false) => {
+  const renderComment = (comment, isReply = false, depth = 0) => {
     const timeAgo = formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: localeId });
     const authorName = comment.User ? comment.User.name : (comment.pseudonym || 'Warga Anonim');
     const avatarLetter = authorName.charAt(0).toUpperCase();
+    
+    // Fallback: Jika backend production belum update untuk mengirimkan role, kita cek dari user_id. 
+    // Karena warga biasa tidak punya user_id (mereka anonim/pseudonym).
+    const isAdmin = (comment.User && comment.User.role?.toLowerCase() === 'admin') || (comment.user_id != null);
+    
     const replies = childComments.filter(c => c.parent_id === comment.id);
 
+    // Threads-like styling: smaller avatars for replies, no massive left margins.
+    const avatarSize = depth === 0 ? 'w-9 h-9 sm:w-10 sm:h-10 text-sm sm:text-base' : 'w-7 h-7 sm:w-8 sm:h-8 text-xs';
+    const borderClass = depth === 0 ? 'border-b border-gray-50 pb-4 mb-4' : 'pb-2';
+    
+    const avatarBg = isAdmin 
+      ? 'from-blue-600 to-blue-500 ring-2 ring-blue-200'
+      : (depth === 0 ? 'from-indigo-500 to-purple-500' : 'from-blue-400 to-indigo-500');
+
+    const commentWrapperClass = isAdmin ? 'bg-blue-50/40 p-3 rounded-2xl border border-blue-100/60' : '';
+
     return (
-      <div key={comment.id} className={`flex gap-3 mb-4 ${isReply ? 'ml-10 mt-2' : ''}`}>
+      <div key={comment.id} className={`flex gap-2.5 sm:gap-3 ${depth > 0 ? 'mt-3' : ''}`}>
         <div className="shrink-0 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
+          <div className={`${avatarSize} rounded-full bg-gradient-to-br ${avatarBg} flex items-center justify-center text-white font-bold shadow-sm z-10`}>
             {avatarLetter}
           </div>
-          {!isReply && replies.length > 0 && (
-            <div className="w-0.5 h-full bg-gray-200 mt-2 rounded-full"></div>
+          {/* Continuous thread line if there are replies */}
+          {replies.length > 0 && (
+            <div className="w-[2px] flex-1 bg-gray-100 mt-1.5 mb-0.5 rounded-full min-h-[16px]"></div>
           )}
         </div>
         
-        <div className="flex-1 pb-4 border-b border-gray-100 last:border-0">
-          <div className="flex justify-between items-baseline mb-1">
-            <h4 className="font-bold text-sm text-gray-900">{authorName}</h4>
-            <span className="text-xs text-gray-500">{timeAgo}</span>
-          </div>
+        <div className={`flex-1 ${borderClass}`}>
+          <div className={commentWrapperClass}>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h4 className="font-bold text-[13px] sm:text-sm text-gray-900 leading-none flex items-center gap-1.5">
+                {authorName}
+                {isAdmin && (
+                  <span className="bg-blue-100 text-blue-700 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md font-extrabold flex items-center">
+                    <Check className="w-2.5 h-2.5 mr-0.5" /> Admin
+                  </span>
+                )}
+              </h4>
+              <span className="text-[11px] text-gray-400 shrink-0 leading-none">{timeAgo}</span>
+            </div>
           
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">{comment.comment_text}</p>
+          <p className="text-[13px] sm:text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{comment.comment_text}</p>
           
           {comment.image_url && (
-            <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 max-w-sm">
-              <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${comment.image_url}`} alt="Lampiran" className="w-full h-auto object-cover" />
+            <div className="mt-2.5 rounded-xl overflow-hidden border border-gray-100 max-w-sm">
+              <img 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${comment.image_url}`} 
+                alt="Lampiran" 
+                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+                onClick={() => {
+                  setFullscreenImage(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${comment.image_url}`);
+                  setFullscreenWatermark(timeAgo);
+                }}
+              />
             </div>
           )}
           
-          <div className="mt-3 flex gap-4">
+          <div className="mt-2 flex gap-4">
             <button 
               onClick={() => setReplyTo({ id: comment.id, name: authorName })}
-              className="text-xs text-gray-500 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors"
+              className="text-[11px] text-gray-400 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors"
             >
-              <MessageCircle className="w-3.5 h-3.5" /> Balas
+              <MessageCircle className="w-3 h-3" /> Balas
             </button>
+          </div>
           </div>
 
           {/* Render Replies */}
-          {replies.map(reply => renderComment(reply, true))}
+          {replies.length > 0 && (
+            <div className="mt-1">
+              {replies.map(reply => renderComment(reply, true, depth + 1))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -172,7 +212,7 @@ const ReportComments = ({ reportId }) => {
       )}
 
       {/* Comments List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4">
         {comments.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-3">
             <MessageCircle className="w-12 h-12 opacity-20" />
@@ -185,7 +225,7 @@ const ReportComments = ({ reportId }) => {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-gray-50 border-t border-gray-200">
+      <div className="p-3 sm:p-4 bg-gray-50 border-t border-gray-200">
         {replyTo && (
           <div className="flex justify-between items-center bg-blue-50 text-blue-800 text-xs px-3 py-2 rounded-t-xl border-x border-t border-blue-100">
             <div className="flex items-center gap-2">
@@ -267,6 +307,14 @@ const ReportComments = ({ reportId }) => {
           </div>
         </form>
       </div>
+      <ImageViewerModal 
+        imageUrl={fullscreenImage} 
+        watermark={fullscreenWatermark}
+        onClose={() => {
+          setFullscreenImage(null);
+          setFullscreenWatermark(null);
+        }} 
+      />
     </div>
   );
 };

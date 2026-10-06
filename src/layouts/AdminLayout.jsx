@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
-import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList, Check } from 'lucide-react';
+import { LayoutDashboard, Database, Settings, LogOut, Menu, AlertTriangle, ClipboardList, Check, Map } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
 import logoLight from '../assets/images/LOGO-DRAINASE2.jpg';
 import { io } from 'socket.io-client';
@@ -12,6 +12,7 @@ const navItems = [
   { path: '/admin/master', label: 'Master Data', icon: Database },
   { path: '/admin/reports', label: 'Laporan', icon: ClipboardList },
   { path: '/admin/emergency', label: 'Darurat', icon: AlertTriangle },
+  { path: '/map', label: 'Peta Publik', icon: Map },
 ];
 
 const AdminLayout = () => {

@@ -8,11 +8,11 @@ const HeroSection = ({ scrollToSection }) => {
       <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         
         {/* Left Column: Typography & CTAs (Sol.it Hero Left) */}
-        <div className="lg:col-span-7 text-left z-10">
+        <div className="lg:col-span-7 text-left z-10 min-w-0">
           {/* Subtle blue bullet badge */}
-          <div className="inline-flex items-center gap-2 text-blue-600 font-semibold text-xs sm:text-[12.5px] tracking-wide mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ring-4 ring-blue-100"></span>
-            Inovasi mitigasi risiko banjir berbasis data Kota Tasikmalaya
+          <div className="inline-flex items-start sm:items-center gap-2.5 text-blue-600 font-semibold text-xs sm:text-[12.5px] tracking-wide mb-5 max-w-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 ring-4 ring-blue-100 shrink-0 mt-1.5 sm:mt-0"></span>
+            <span className="text-left">Inovasi mitigasi risiko banjir berbasis data Kota Tasikmalaya</span>
           </div>
           
           {/* Main Headline - scaled down comfortably */}
@@ -46,7 +46,7 @@ const HeroSection = ({ scrollToSection }) => {
         </div>
         
         {/* Right Column: Iconic Blue Flow Card (Sol.it Hero Right) */}
-        <div className="lg:col-span-5 w-full relative">
+        <div className="lg:col-span-5 w-full relative min-w-0">
           <div className="bg-[#2563EB] rounded-[28px] p-6 sm:p-7 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
             
             {/* Subtle background radial light */}
